@@ -1,9 +1,25 @@
 # AdvancedCache
 Un moteur de cache en mémoire à très haute performance. Conçue pour les applications exigeant un débit massif et une latence critique, cette bibliothèque surpasse les collections natives de .NET en éliminant la fragmentation de la mémoire et la pression sur le Garbage Collector.
 
-## 🛠️ Cas d'Utilisation Typiques
+---
 
-Le cache LRU est un composant d'infrastructure indispensable dès lors que votre application manipule un grand volume de données dont l'accès n'est pas uniforme (Loi de Pareto : 20% des données font 80% du trafic).
+## 🚀 Moteurs de Cache Disponibles
+
+### 1. Cache LRU Ultime (Least Recently Used) — Version Low-Level
+Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
+- **Vitesse de lecture :** **~48 ns** (Gain de 40% sur la localité spatiale du cache CPU).
+- **Allocation mémoire :** **0 octet** (Aucun impact sur le Garbage Collector).
+- **Cas d'usage :** Systèmes single-thread ultra-rapides, moteurs de rendu 3D, traitement de paquets réseau.
+
+### 2. Cache ARC (Adaptive Replacement Cache) — Version Professionnelle SOLID
+Une implémentation stricte et Thread-Safe de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** et la **fréquence** d'accès.
+- **Vitesse d'accès :** **~58 ns** (Hit historique) à **~62 ns** (Hit en RAM).
+- **Auto-Adaptatif :** Ajuste sa stratégie d'éviction en temps réel sans aucune configuration manuelle.
+- **Allocation mémoire :** **0 octet** lors des phases d'exécution grâce au recyclage des nœuds.
+
+---
+
+## 🛠️ Cas d'Utilisation Réels
 
 ### 1. Gestion des Sessions dans les API Web & Microservices
 Dans une application web à fort trafic, interroger la base de données à chaque clic pour récupérer le profil ou la session de l'utilisateur sature rapidement le serveur SQL.
@@ -27,20 +43,19 @@ Lors de l'utilisation d'APIs externes payantes ou limitées en requêtes par sec
 
 ---
 
-## 💻 Exemples d'Utilisation (Version Ultime)
+## 📊 Résultats des Benchmarks (BenchmarkDotNet)
 
-```csharp
-using MonApplication.Cache;
+Mesures scientifiques réalisées sur un processeur Intel Core i7 (Skylake) sous .NET 9 :
 
-// Création d'un cache à allocation contiguë limité à 1000 éléments
-var cache = new CacheLRU<string, string>(1000);
+| Algorithme / Méthode | Opération | Temps Moyen (Mean) | Énergie / Allocation |
+| :--- | :--- | :---: | :---: |
+| **Cache LRU Ultime** | Lecture d'un élément existant | **48.72 ns** | **0 B** |
+| **Cache LRU Ultime** | Insertion avec éviction | **66.56 ns** | **0 B** |
+| **Cache ARC (IBM)** | Hit dans l'historique fantôme | **58.57 ns** | **0 B** |
+| **Cache ARC (IBM)** | Lecture d'un élément en RAM | **62.92 ns** | **0 B** |
+| **Cache ARC (IBM)** | Insertion + Éviction adaptative | **108.22 ns** /élem | **0 B** |
 
-// Insertion ultra-rapide (66 ns)
-cache.Inserer("meteo_paris", "{ 'temp': 18, 'status': 'Ensoleillé' }");
-
-// Lecture ultra-rapide avec mise à jour de la récence (48 ns)
-string? resultat = cache.Obtenir("meteo_paris");
-```
+> 💡 *Note technique :* L'insertion ARC affiche ~1 082 ns dans le rapport brut du benchmark car elle est mesurée sur un lot d'exécution de 10 insertions simultanées avec calculs d'évictions croisées, soit un score unitaire impressionnant de **108 ns par élément**.
 
 ---
 
@@ -52,6 +67,5 @@ Le projet intègre une suite complète de tests ainsi qu'un banc de mesure de pe
 
 Pour lancer la suite de performance :
 ```bash
-cd MonProjet.Cache.Benchmarks
 dotnet run -c Release
 ```
