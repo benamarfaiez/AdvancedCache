@@ -1,0 +1,11 @@
+﻿################################################################################
+# Ce fichier .gitignore a été automatiquement créé par Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/AdvancedCache/bin
+/AdvancedCache/obj
+/AdvancedCache.Benchmarks/bin
+/AdvancedCache.Benchmarks/obj
+/AdvancedCache.Tests/bin/Debug/net10.0
+/AdvancedCache.Tests/obj

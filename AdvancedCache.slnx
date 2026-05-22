@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="AdvancedCache.Benchmarks/AdvancedCache.Benchmarks.csproj" />
+  <Project Path="AdvancedCache.Tests/AdvancedCache.Tests.csproj" />
+  <Project Path="AdvancedCache/AdvancedCache.csproj" />
+</Solution>
