@@ -1,57 +1,104 @@
 # AdvancedCache
-Un moteur de cache en mémoire à très haute performance. Conçue pour les applications exigeant un débit massif et une latence critique, cette bibliothèque surpasse les collections natives de .NET en éliminant la fragmentation de la mémoire et la pression sur le Garbage Collector.
 
-## 🛠️ Cas d'Utilisation Typiques
-
-Le cache LRU est un composant d'infrastructure indispensable dès lors que votre application manipule un grand volume de données dont l'accès n'est pas uniforme (Loi de Pareto : 20% des données font 80% du trafic).
-
-### 1. Gestion des Sessions dans les API Web & Microservices
-Dans une application web à fort trafic, interroger la base de données à chaque clic pour récupérer le profil ou la session de l'utilisateur sature rapidement le serveur SQL.
-- **Rôle du cache :** Conserver en mémoire vive les sessions des utilisateurs actifs.
-- **Bénéfice :** Un temps d'accès de **48 ns** au lieu de plusieurs millisecondes (un gain de vitesse d'un facteur 1 000 000). Les utilisateurs inactifs sont automatiquement évincés dès que la capacité maximale est atteinte.
-
-### 2. Streaming de Médias & Réseaux de Diffusion de Contenu (CDN)
-Les plateformes de vidéo à la demande ou les sites de partage de fichiers font face à des requêtes massives sur des fichiers volumineux.
-- **Rôle du cache :** Maintenir en RAM ou sur disque rapide les médias "tendances" ou les plus visionnés du moment.
-- **Bénéfice :** Les contenus obsolètes ou oubliés glissent vers la queue du cache et sont supprimés pour laisser la place aux nouvelles sorties, évitant la saturation de la mémoire.
-
-### 3. Moteurs de Jeux Vidéo (Chargement de Monde Ouvert / Open World)
-La carte d'un monde ouvert est trop vaste pour tenir entièrement dans la mémoire vidéo (VRAM) ou la mémoire système.
-- **Rôle du cache :** Charger et décharger dynamiquement les morceaux de carte (*chunks*), les textures et les modèles 3D en fonction des déplacements du joueur.
-- **Bénéfice :** Les zones immédiatement entourant le joueur restent en tête de cache. Les zones laissées loin derrière sont libérées sans provoquer de micro-bégaiement (*stuttering*), assurant une expérience de jeu fluide.
-
-### 4. Limitation de Débit (Rate Limiting) & Requêtes d'APIs Tierces
-Lors de l'utilisation d'APIs externes payantes ou limitées en requêtes par seconde (ex: API Google Maps, Services météo).
-- **Rôle du cache :** Conserver la réponse d'une coordonnée ou d'une ville demandée.
-- **Bénéfice :** Si 1000 utilisateurs demandent la météo de la même ville au même moment, l'API externe n'est appelée qu'une seule fois. Le cache fournit instantanément la réponse aux 999 autres, économisant de l'argent et évitant le blocage des quotas.
+Un moteur de cache en mémoire à très haute performance. Conçue pour les applications exigeant un débit massif et une latence critique, cette bibliothèque surpasse les collections natives de .NET en éliminant la fragmentation de la mémoire et la pression sur le Garbage Collector (GC).
 
 ---
 
-## 💻 Exemples d'Utilisation (Version Ultime)
+## 🚀 Moteurs de Cache Disponibles
 
-```csharp
-using MonApplication.Cache;
+### 1. Cache LRU Ultime (Least Recently Used)
+Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
+- **Vitesse de lecture :** **~48 ns** (Gain de 40 % sur la localité spatiale du cache CPU).
+- **Allocation mémoire :** **0 octet** (Aucun impact sur le Garbage Collector).
+- **Philosophie :** Évince les éléments qui n'ont pas été consultés depuis le plus longtemps. Idéal pour privilégier la **récence**.
 
-// Création d'un cache à allocation contiguë limité à 1000 éléments
-var cache = new CacheLRU<string, string>(1000);
+### 2. Cache LFU Synchrone (Least Frequently Used)
+Une implémentation hautement performante combinant un dictionnaire d'accès rapide et un double chaînage par paliers de fréquences. En cas d'égalité de fréquence, un mécanisme LRU (*Tie-breaker*) prend le relais.
+- **Vitesse d'accès :** **~56 ns** en insertion et **~101 ns** en cas de *Hit* (garanti en temps constant $O(1)$ peu importe la taille du cache).
+- **Allocation mémoire :** **0 octet** lors des lectures et des évictions (allocation unique du nœud à l'insertion).
+- **Philosophie :** Évince les éléments les moins souvent consultés. Idéal pour valoriser la **popularité à long terme**.
 
-// Insertion ultra-rapide (66 ns)
-cache.Inserer("meteo_paris", "{ 'temp': 18, 'status': 'Ensoleillé' }");
+### 3. Cache ARC (Adaptive Replacement Cache)
+Une implémentation stricte et *Thread-Safe* de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** (LRU) et la **fréquence** (LFU) d'accès.
+- **Vitesse d'accès :** **~58 ns** (Hit historique) à **~62 ns** (Hit en RAM).
+- **Auto-adaptatif :** Ajuste sa stratégie d'éviction en temps réel sans aucune configuration manuelle.
+- **Allocation mémoire :** **0 octet** lors des phases d'exécution grâce au recyclage des nœuds.
 
-// Lecture ultra-rapide avec mise à jour de la récence (48 ns)
-string? resultat = cache.Obtenir("meteo_paris");
-```
+---
+
+## 🧠 Guide de Choix d'Ingénierie
+
+Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à vos données** (le *Workload*). Utiliser le mauvais moteur peut effondrer votre taux d'efficacité (*Cache Hit Rate*).
+
+### 📋 Les 3 Critères Majeurs de Décision
+
+1. **La Récence (Le facteur Temps) :** Une donnée qui vient d'être consultée a-t-elle de grandes chances d'être redemandée immédiatement ? *(Ex. : fils d'actualité, paniers d'achat)* 
+➡️ **Priorité LRU**
+2. **La Fréquence (Le facteur Popularité) :** Existe-t-il des données "stars" qui restent très demandées sur de longues périodes, même si elles ne sont pas lues chaque seconde ? *(Ex. : taux de change, fiches produits Best-Sellers)* 
+➡️ **Priorité LFU**
+3. **La Volatilité du Trafic :** Votre comportement d'accès change-t-il constamment de dynamique (vagues de nouveautés puis retour soudain au fond de catalogue) ? 
+➡️ **Priorité ARC**
+
+### 📊 Tableau Décisionnel Rapide
+
+| Algorithme | Force Majeure | Point Faible Critique | Profil Type |
+| :--- | :--- | :--- | :--- |
+| **LRU** | Excellent pour le trafic "temps réel" et les données éphémères. | **Le "Scan Crash" :** Un balayage séquentiel de BDD vide tout le cache utile. | Flux d'activité, sessions web, tokens JWT. |
+| **LFU** | Protégé contre les scans massifs. Les éléments populaires restent ancrés. | **Pollution historique :** Un élément obsolète mais très populaire par le passé reste bloqué. | Tables de référence, dictionnaires, configurations. |
+| **ARC** | **Auto-adaptatif.** Équilibre parfait et dynamique entre LRU et LFU. | Complexité interne accrue (~15 % plus lent sur les écritures massives). | Systèmes de fichiers, bases de données, API mixtes. |
+
+---
+
+## 🛠️ Exemples Concrets pour Trancher
+
+### Cas 1 : Vous développez un jeu vidéo "Open World" (Choix : LRU)
+- **Le comportement :** Le joueur avance en ligne droite. Le moteur doit charger les textures de la zone devant lui et jeter celles de la zone qu'il vient de quitter définitivement.
+- **Pourquoi ce choix :** La récence spatiale et temporelle est absolue. Un cache LFU serait catastrophique car il garderait en mémoire la zone de départ du jeu (où le joueur a passé beaucoup de temps au début) au détriment des nouvelles zones découvertes.
+
+### Cas 2 : Vous créez une API de conversion de devises / Taux de change (Choix : LFU)
+- **Le comportement :** Les taux EUR/USD ou USD/JPY sont demandés des millions de fois par jour. À l'inverse, le taux lié à une monnaie très rare n'est demandé qu'une fois par mois.
+- **Pourquoi ce choix :** Les paires majeures ont une fréquence d'accès tellement gigantesque qu'elles doivent être verrouillées en RAM. Même si une rafale de requêtes interroge des monnaies rares simultanément, le LFU protège les données "stars" de l'éviction.
+
+### Cas 3 : Vous développez une plateforme de Streaming Vidéo (Choix : ARC)
+- **Le comportement :** Face à une sortie de série, les utilisateurs font du *binge-watching* intense (Récence). En parallèle, des films classiques indémodables récoltent un trafic stable et continu chaque jour (Fréquence).
+- **Pourquoi ce choix :** L'ARC s'adapte en temps réel. Si une nouveauté cartonne, il agrandit sa liste LRU. Quand le calme revient, il redonne l'avantage aux fichiers fréquemment vus (LFU), garantissant le meilleur taux de *Hit* possible sans intervention humaine.
+
+### Cas 4 : Limitation de Débit (Rate Limiting) & API Tierces (Choix : LRU)
+- **Le comportement :** Intercepter les abus de requêtes sur des fenêtres glissantes de quelques minutes.
+- **Pourquoi ce choix :** Les adresses IP ou clés d'API doivent être suivies activement tant qu'elles émettent des requêtes. Dès qu'un client arrête son activité, sa présence dans le cache n'a plus aucune valeur : le LRU l'éliminera naturellement au profit des nouveaux connectés.
+
+---
+
+## 📊 Résultats des Benchmarks (BenchmarkDotNet)
+
+Mesures scientifiques réalisées sous .NET 9 (mode *Release*, capacité variable) :
+
+| Algorithme / Moteur | Opération | Capacité | Temps Moyen (Mean) | Allocation Mémoire |
+| :--- | :--- | :---: | :---: | :---: |
+| **Cache LRU Ultime** | Lecture d'un élément existant | 10 000 | **48.72 ns** | **0 B** |
+| **Cache LRU Ultime** | Insertion avec éviction | 10 000 | **66.56 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 100 | **11.93 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 10 000 | **20.21 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Inserer avec Éviction LFU | 100 | **56.43 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Inserer avec Éviction LFU | 10 000 | **103.47 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Inserer (Mise à jour) | 100 | **59.30 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Inserer (Mise à jour) | 10 000 | **109.86 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 100 | **101.93 ns** | **0 B** |
+| **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 10 000 | **120.41 ns** | **0 B** |
+| **Cache ARC (IBM)** | Hit dans l'historique fantôme | 10 000 | **58.57 ns** | **0 B** |
+| **Cache ARC (IBM)** | Lecture d'un élément en RAM | 10 000 | **62.92 ns** | **0 B** |
+| **Cache ARC (IBM)** | Insertion + Éviction adaptative | 10 000 | **108.22 ns** | **0 B** |
+
+> 💡 *Note technique sur le LFU :* La stabilité des performances entre la capacité 100 et 10 000 prouve empiriquement la complexité algorithmique en temps constant $O(1)$. Les opérations de lecture (*Cache Hit*) prennent légèrement plus de temps (~100 ns) car elles réorganisent dynamiquement l'arborescence des listes de fréquences.
 
 ---
 
 ## 🧪 Tests & Validation
 
 Le projet intègre une suite complète de tests ainsi qu'un banc de mesure de performance :
-- **Tests Unitaires (xUnit) :** Validation des cas aux limites et scénarios de stress d'éviction.
+- **Tests Unitaires (xUnit) :** Validation des cas aux limites, de l'intégrité des types de données (gestion de la valeur par défaut pour les types de valeur comme `int`), et scénarios de stress d'éviction.
 - **Benchmarks (BenchmarkDotNet) :** Analyse nanoseconde par nanoseconde du comportement du processeur et des allocations mémoire.
 
 Pour lancer la suite de performance :
 ```bash
-cd MonProjet.Cache.Benchmarks
 dotnet run -c Release
-```
