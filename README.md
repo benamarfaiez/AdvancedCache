@@ -9,20 +9,21 @@ Un moteur de cache en mémoire à très haute performance. Conçue pour les appl
 ### 1. Cache LRU Ultime (Least Recently Used)
 Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
 - **Vitesse de lecture :** **~48 ns** (Gain de 40 % sur la localité spatiale du cache CPU).
-- **Allocation mémoire :** **0 octet** (Aucun impact sur le Garbage Collector).
+- **Allocation mémoire :** **0 octet** 
 - **Philosophie :** Évince les éléments qui n'ont pas été consultés depuis le plus longtemps. Idéal pour privilégier la **récence**.
 
 ### 2. Cache LFU Synchrone (Least Frequently Used)
 Une implémentation hautement performante combinant un dictionnaire d'accès rapide et un double chaînage par paliers de fréquences. En cas d'égalité de fréquence, un mécanisme LRU (*Tie-breaker*) prend le relais.
 - **Vitesse d'accès :** **~56 ns** en insertion et **~101 ns** en cas de *Hit* (garanti en temps constant $O(1)$ peu importe la taille du cache).
-- **Allocation mémoire :** **0 octet** lors des lectures et des évictions (allocation unique du nœud à l'insertion).
+- **Allocation mémoire :** **0 octet** 
 - **Philosophie :** Évince les éléments les moins souvent consultés. Idéal pour valoriser la **popularité à long terme**.
 
 ### 3. Cache ARC (Adaptive Replacement Cache)
-Une implémentation stricte et *Thread-Safe* de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** (LRU) et la **fréquence** (LFU) d'accès.
+Une implémentation stricte et *Thread-Safe* de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes afin de trouver l'équilibre parfait entre la **récence** (LRU) et la **fréquence** (LFU) d'accès.
 - **Vitesse d'accès :** **~58 ns** (Hit historique) à **~62 ns** (Hit en RAM).
+- **Allocation mémoire :** **0 octet** 
 - **Auto-adaptatif :** Ajuste sa stratégie d'éviction en temps réel sans aucune configuration manuelle.
-- **Allocation mémoire :** **0 octet** lors des phases d'exécution grâce au recyclage des nœuds.
+
 
 ---
 
@@ -33,11 +34,11 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 ### 📋 Les 3 Critères Majeurs de Décision
 
 1. **La Récence (Le facteur Temps) :** Une donnée qui vient d'être consultée a-t-elle de grandes chances d'être redemandée immédiatement ? *(Ex. : fils d'actualité, paniers d'achat)* 
-➡️ **Priorité LRU**
+ ➡️ **Priorité LRU**
 2. **La Fréquence (Le facteur Popularité) :** Existe-t-il des données "stars" qui restent très demandées sur de longues périodes, même si elles ne sont pas lues chaque seconde ? *(Ex. : taux de change, fiches produits Best-Sellers)* 
-➡️ **Priorité LFU**
+ ➡️ **Priorité LFU**
 3. **La Volatilité du Trafic :** Votre comportement d'accès change-t-il constamment de dynamique (vagues de nouveautés puis retour soudain au fond de catalogue) ? 
-➡️ **Priorité ARC**
+ ➡️ **Priorité ARC**
 
 ### 📊 Tableau Décisionnel Rapide
 
@@ -49,7 +50,7 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 
 ---
 
-## 🛠️ Exemples Concrets pour Trancher
+## 🛠️ Exemples Concrets
 
 ### Cas 1 : Vous développez un jeu vidéo "Open World" (Choix : LRU)
 - **Le comportement :** Le joueur avance en ligne droite. Le moteur doit charger les textures de la zone devant lui et jeter celles de la zone qu'il vient de quitter définitivement.
@@ -71,25 +72,18 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 
 ## 📊 Résultats des Benchmarks (BenchmarkDotNet)
 
-Mesures scientifiques réalisées sous .NET 9 (mode *Release*, capacité variable) :
+Mesures scientifiques réalisées sous .NET 10 (mode *Release*, capacité variable) :
 
 | Algorithme / Moteur | Opération | Capacité | Temps Moyen (Mean) | Allocation Mémoire |
 | :--- | :--- | :---: | :---: | :---: |
-| **Cache LRU Ultime** | Lecture d'un élément existant | 10 000 | **48.72 ns** | **0 B** |
-| **Cache LRU Ultime** | Insertion avec éviction | 10 000 | **66.56 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 100 | **11.93 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 10 000 | **20.21 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Inserer avec Éviction LFU | 100 | **56.43 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Inserer avec Éviction LFU | 10 000 | **103.47 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Inserer (Mise à jour) | 100 | **59.30 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Inserer (Mise à jour) | 10 000 | **109.86 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 100 | **101.93 ns** | **0 B** |
-| **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 10 000 | **120.41 ns** | **0 B** |
-| **Cache ARC (IBM)** | Hit dans l'historique fantôme | 10 000 | **58.57 ns** | **0 B** |
-| **Cache ARC (IBM)** | Lecture d'un élément en RAM | 10 000 | **62.92 ns** | **0 B** |
-| **Cache ARC (IBM)** | Insertion + Éviction adaptative | 10 000 | **108.22 ns** | **0 B** |
-
-> 💡 *Note technique sur le LFU :* La stabilité des performances entre la capacité 100 et 10 000 prouve empiriquement la complexité algorithmique en temps constant $O(1)$. Les opérations de lecture (*Cache Hit*) prennent légèrement plus de temps (~100 ns) car elles réorganisent dynamiquement l'arborescence des listes de fréquences.
+| **Cache LRU ** | Lecture d'un élément existant | 10 000 | **48.72 ns** | **0 B** |
+| **Cache LRU ** | Insertion avec éviction | 10 000 | **66.56 ns** | **0 B** |
+| **Cache LFU ** | Obtenir (Cache Miss) | 10 000 | **20.21 ns** | **0 B** |
+| **Cache LFU ** | Inserer avec Éviction LFU | 10 000 | **103.47 ns** | **0 B** |
+| **Cache LFU ** | Inserer (Mise à jour) | 10 000 | **109.86 ns** | **0 B** |
+| **Cache LFU ** | Obtenir (Cache Hit) | 10 000 | **120.41 ns** | **0 B** |
+| **Cache ARC ** | Lecture d'un élément en RAM | 10 000 | **62.92 ns** | **0 B** |
+| **Cache ARC ** | Insertion + Éviction adaptative | 10 000 | **108.22 ns** | **0 B** |
 
 ---
 
