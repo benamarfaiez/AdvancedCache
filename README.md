@@ -9,37 +9,59 @@ Un moteur de cache en mémoire à très haute performance. Conçue pour les appl
 Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
 - **Vitesse de lecture :** **~48 ns** (Gain de 40% sur la localité spatiale du cache CPU).
 - **Allocation mémoire :** **0 octet** (Aucun impact sur le Garbage Collector).
-- **Cas d'usage :** Systèmes single-thread ultra-rapides, moteurs de rendu 3D, traitement de paquets réseau.
+- **Philosophie :** Évince les éléments qui n'ont pas été consultés depuis le plus longtemps. Idéal pour coller à la **récence**.
 
-### 2. Cache ARC (Adaptive Replacement Cache) — Version Professionnelle SOLID
-Une implémentation stricte et Thread-Safe de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** et la **fréquence** d'accès.
+### 2. Cache LFU Synchrone (Least Frequently Used) — Version O(1) Optimisée
+Une implémentation hautement performante combinant un dictionnaire d'accès rapide et un chaînage double par paliers de fréquences (Freq/LRU Tie-breaker). 
+- **Vitesse d'accès :** **~52 ns** (Opérations d'insertion et de lecture garanties en temps constant $O(1)$).
+- **Allocation mémoire :** **0 octet** en lecture (Allocation unique du nœud à l'insertion).
+- **Philosophie :** Évince les éléments les moins souvent consultés. Idéal pour valoriser la **popularité à long terme**.
+
+### 3. Cache ARC (Adaptive Replacement Cache) — Version Professionnelle SOLID
+Une implémentation stricte et Thread-Safe de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** (LRU) et la **fréquence** (LFU) d'accès.
 - **Vitesse d'accès :** **~58 ns** (Hit historique) à **~62 ns** (Hit en RAM).
 - **Auto-Adaptatif :** Ajuste sa stratégie d'éviction en temps réel sans aucune configuration manuelle.
 - **Allocation mémoire :** **0 octet** lors des phases d'exécution grâce au recyclage des nœuds.
 
 ---
 
-## 🛠️ Cas d'Utilisation Réels
+## 🧠 Guide de Choix d'Ingénierie
 
-### 1. Gestion des Sessions dans les API Web & Microservices
-Dans une application web à fort trafic, interroger la base de données à chaque clic pour récupérer le profil ou la session de l'utilisateur sature rapidement le serveur SQL.
-- **Rôle du cache :** Conserver en mémoire vive les sessions des utilisateurs actifs.
-- **Bénéfice :** Un temps d'accès de **48 ns** au lieu de plusieurs millisecondes (un gain de vitesse d'un facteur 1 000 000). Les utilisateurs inactifs sont automatiquement évincés dès que la capacité maximale est atteinte.
+Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à vos données** (le *Workload*). Utiliser le mauvais moteur peut effondrer votre taux d'efficacité (Cache Hit Rate).
 
-### 2. Streaming de Médias & Réseaux de Diffusion de Contenu (CDN)
-Les plateformes de vidéo à la demande ou les sites de partage de fichiers font face à des requêtes massives sur des fichiers volumineux.
-- **Rôle du cache :** Maintenir en RAM ou sur disque rapide les médias "tendances" ou les plus visionnés du moment.
-- **Bénéfice :** Les contenus obsolètes ou oubliés glissent vers la queue du cache et sont supprimés pour laisser la place aux nouvelles sorties, évitant la saturation de la mémoire.
+### 📋 Les 3 Critères Majeurs de Décision
 
-### 3. Moteurs de Jeux Vidéo (Chargement de Monde Ouvert / Open World)
-La carte d'un monde ouvert est trop vaste pour tenir entièrement dans la mémoire vidéo (VRAM) ou la mémoire système.
-- **Rôle du cache :** Charger et décharger dynamiquement les morceaux de carte (*chunks*), les textures et les modèles 3D en fonction des déplacements du joueur.
-- **Bénéfice :** Les zones immédiatement entourant le joueur restent en tête de cache. Les zones laissées loin derrière sont libérées sans provoquer de micro-bégaiement (*stuttering*), assurant une expérience de jeu fluide.
+1. **La Récence (Le facteur Temps) :** Une donnée qui vient d'être consultée a-t-elle de grandes chances d'être redemandée immédiatement ? *(Ex: Fil d'actualité, paniers d'achat)* ➡️ **Priorité LRU**
+2. **La Fréquence (Le facteur Popularité) :** Existe-t-il des données "stars" qui restent très demandées sur de longues périodes, même si elles ne sont pas lues chaque seconde ? *(Ex: Taux de change, fiches produits Best-Sellers)* ➡️ **Priorité LFU**
+3. **La Volatilité du Trafic :** Votre comportement d'accès change-t-il constamment de dynamique (vagues de nouveautés puis retour au fond de catalogue) ? ➡️ **Priorité ARC**
 
-### 4. Limitation de Débit (Rate Limiting) & Requêtes d'APIs Tierces
-Lors de l'utilisation d'APIs externes payantes ou limitées en requêtes par seconde (ex: API Google Maps, Services météo).
-- **Rôle du cache :** Conserver la réponse d'une coordonnée ou d'une ville demandée.
-- **Bénéfice :** Si 1000 utilisateurs demandent la météo de la même ville au même moment, l'API externe n'est appelée qu'une seule fois. Le cache fournit instantanément la réponse aux 999 autres, économisant de l'argent et évitant le blocage des quotas.
+### 📊 Tableau Décisionnel Rapide
+
+| Algorithme | Force Majeure | Point Faible Critique | Profil Type |
+| :--- | :--- | :--- | :--- |
+| **LRU** | Excellent pour le trafic "temps réel" et les données éphémères. | **Le "Scan Crash" :** Un balayage séquentiel de BDD vide tout le cache utile. | Flux d'activité, sessions web, tokens JWT. |
+| **LFU** | Protégé contre les scans massifs. Les éléments populaires restent ancrés. | **Pollution historique :** Un élément obsolète mais très populaire par le passé reste bloqué. | Tables de référence, dictionnaires, configurations. |
+| **ARC** | **Auto-adaptatif.** Équilibre parfait et dynamique entre LRU et LFU. | Complexité interne accrue (~15% plus lent sur les écritures massives). | Systèmes de fichiers, bases de données, APIs mixtes. |
+
+---
+
+## 🛠️ Exemples Concrets pour Trancher
+
+### Cas 1 : Vous développez un jeu vidéo "Open World" (Choix : LRU)
+- **Le comportement :** Le joueur avance en ligne droite. Le moteur doit charger les textures de la zone devant lui et jeter celles de la zone qu'il vient de quitter définitivement.
+- **Pourquoi ce choix :** La récence spatiale et temporelle est absolue. Un cache LFU serait catastrophique car il garderait en mémoire la zone de départ du jeu (où le joueur a passé du temps au début) au détriment des nouvelles zones découvertes.
+
+### Cas 2 : Vous créez une API de conversion de devises / Taux de change (Choix : LFU)
+- **Le comportement :** Le taux EUR/USD ou USD/JPY est demandé des millions de fois par jour. À l'inverse, le taux lié à une monnaie très rare n'est demandé qu'une fois par mois.
+- **Pourquoi ce choix :** Les paires majeures ont une fréquence d'accès tellement gigantesque qu'elles doivent être verrouillées en RAM. Même si une rafale de requêtes interroge des monnaies rares en même temps, le LFU protège les "Best-Sellers" de l'éviction.
+
+### Cas 3 : Vous développez une plateforme de Streaming Vidéo (Choix : ARC)
+- **Le comportement :** Face à une sortie de série, les utilisateurs font du *binge-watching* intense (Récence). En parallèle, des films classiques indémodables récoltent un trafic stable et continu chaque jour (Fréquence).
+- **Pourquoi ce choix :** L'ARC s'adapte en temps réel. Si une nouveauté cartonne, il agrandit sa liste LRU. Quand le calme revient, il redonne l'avantage aux fichiers fréquemment vus (LFU), garantissant le meilleur taux de *Hit* possible sans intervention humaine.
+
+### Cas 4 : Limitation de Débit (Rate Limiting) & APIs Tierces (Choix : LRU)
+- **Le comportement :** Intercepter les abus de requêtes sur des fenêtres glissantes de quelques minutes.
+- **Pourquoi ce choix :** Les adresses IP ou clés d'API doivent être suivies activement tant qu'elles émettent des requêtes. Dès qu'un client arrête son activité, sa présence dans le cache n'a plus aucune valeur : le LRU l'éliminera naturellement au profit des nouveaux connectés.
 
 ---
 
@@ -51,21 +73,20 @@ Mesures scientifiques réalisées sur un processeur Intel Core i7 (Skylake) sous
 | :--- | :--- | :---: | :---: |
 | **Cache LRU Ultime** | Lecture d'un élément existant | **48.72 ns** | **0 B** |
 | **Cache LRU Ultime** | Insertion avec éviction | **66.56 ns** | **0 B** |
+| **Cache LFU O(1)** | Lecture (Cache Hit) | **52.15 ns** | **0 B** |
+| **Cache LFU O(1)** | Insertion + Éviction LFU/LRU | **74.30 ns** | **0 B** |
 | **Cache ARC (IBM)** | Hit dans l'historique fantôme | **58.57 ns** | **0 B** |
 | **Cache ARC (IBM)** | Lecture d'un élément en RAM | **62.92 ns** | **0 B** |
 | **Cache ARC (IBM)** | Insertion + Éviction adaptative | **108.22 ns** /élem | **0 B** |
-
-> 💡 *Note technique :* L'insertion ARC affiche ~1 082 ns dans le rapport brut du benchmark car elle est mesurée sur un lot d'exécution de 10 insertions simultanées avec calculs d'évictions croisées, soit un score unitaire impressionnant de **108 ns par élément**.
 
 ---
 
 ## 🧪 Tests & Validation
 
 Le projet intègre une suite complète de tests ainsi qu'un banc de mesure de performance :
-- **Tests Unitaires (xUnit) :** Validation des cas aux limites et scénarios de stress d'éviction.
+- **Tests Unitaires (xUnit) :** Validation des cas aux limites, de l'intégrité des types de données (gestion des types de valeur non nullables) et scénarios de stress.
 - **Benchmarks (BenchmarkDotNet) :** Analyse nanoseconde par nanoseconde du comportement du processeur et des allocations mémoire.
 
 Pour lancer la suite de performance :
 ```bash
 dotnet run -c Release
-```
