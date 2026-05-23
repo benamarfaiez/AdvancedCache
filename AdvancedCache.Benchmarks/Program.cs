@@ -7,7 +7,8 @@ namespace AdvancedCache.Benchmarks
         static void Main(string[] args)
         {
             BenchmarkRunner.Run<CacheARCBenchmarks>();
-            BenchmarkRunner.Run<CacheLRUBenchmarks>();            
+            BenchmarkRunner.Run<CacheLRUBenchmarks>();
+            BenchmarkRunner.Run<CacheLFUBenchmark>();            
         }
     }
 }

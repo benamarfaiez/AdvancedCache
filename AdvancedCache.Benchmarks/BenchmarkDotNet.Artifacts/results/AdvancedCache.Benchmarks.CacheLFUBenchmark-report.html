@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>AdvancedCache.Benchmarks.CacheLFUBenchmark-20260523-184250</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.7291/22H2/2022Update)
+Intel Core i7-6500U CPU 2.50GHz (Max: 2.59GHz) (Skylake), 1 CPU, 4 logical and 2 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.1, 10.0.125.57005), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.1 (10.0.1, 10.0.125.57005), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method               </th><th>Capacite</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Rank</th><th>Gen0</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>&#39;Obtenir (Cache Miss)&#39;</td><td>100</td><td>11.93 ns</td><td>0.287 ns</td><td>0.307 ns</td><td>12.00 ns</td><td>1</td><td>-</td><td>-</td>
+</tr><tr><td>&#39;Obtenir (Cache Miss)&#39;</td><td>10000</td><td>20.21 ns</td><td>0.371 ns</td><td>0.329 ns</td><td>20.10 ns</td><td>2</td><td>-</td><td>-</td>
+</tr><tr><td>&#39;Inserer avec Éviction LFU&#39;</td><td>100</td><td>56.43 ns</td><td>1.075 ns</td><td>0.839 ns</td><td>56.42 ns</td><td>3</td><td>-</td><td>1 B</td>
+</tr><tr><td>&#39;Inserer (Mise à jour)&#39;</td><td>100</td><td>59.30 ns</td><td>1.195 ns</td><td>2.030 ns</td><td>58.80 ns</td><td>3</td><td>-</td><td>1 B</td>
+</tr><tr><td>&#39;Obtenir (Cache Hit)&#39;</td><td>100</td><td>101.93 ns</td><td>9.213 ns</td><td>26.875 ns</td><td>102.00 ns</td><td>4</td><td>0.0001</td><td>1 B</td>
+</tr><tr><td>&#39;Inserer avec Éviction LFU&#39;</td><td>10000</td><td>103.47 ns</td><td>2.083 ns</td><td>4.573 ns</td><td>103.05 ns</td><td>4</td><td>-</td><td>-</td>
+</tr><tr><td>&#39;Inserer (Mise à jour)&#39;</td><td>10000</td><td>109.86 ns</td><td>4.035 ns</td><td>11.314 ns</td><td>104.69 ns</td><td>4</td><td>-</td><td>-</td>
+</tr><tr><td>&#39;Obtenir (Cache Hit)&#39;</td><td>10000</td><td>120.41 ns</td><td>4.416 ns</td><td>12.952 ns</td><td>116.49 ns</td><td>5</td><td>-</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>
