@@ -9,13 +9,13 @@ Un moteur de cache en mémoire à très haute performance. Conçue pour les appl
 ### 1. Cache LRU Ultime (Least Recently Used)
 Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
 - **Vitesse de lecture :** **~48 ns** (Gain de 40 % sur la localité spatiale du cache CPU).
-- **Allocation mémoire :** **0 octet** (Aucun impact sur le Garbage Collector).
+- **Allocation mémoire :** **0 octet** 
 - **Philosophie :** Évince les éléments qui n'ont pas été consultés depuis le plus longtemps. Idéal pour privilégier la **récence**.
 
 ### 2. Cache LFU Synchrone (Least Frequently Used) — Version $O(1)$
 Une implémentation hautement performante combinant un dictionnaire d'accès rapide et un double chaînage par paliers de fréquences. En cas d'égalité de fréquence, un mécanisme LRU (*Tie-breaker*) prend le relais.
 - **Vitesse d'accès :** **~56 ns** en insertion et **~101 ns** en cas de *Hit* (garanti en temps constant $O(1)$ peu importe la taille du cache).
-- **Allocation mémoire :** **0 octet** lors des lectures et des évictions (allocation unique du nœud à l'insertion).
+- **Allocation mémoire :** **0 octet** 
 - **Philosophie :** Évince les éléments les moins souvent consultés. Idéal pour valoriser la **popularité à long terme**.
 
 ### 3. Cache W-TinyLFU (Window TinyLFU) — Idéal pour la Production à charge mixte
@@ -27,8 +27,9 @@ Une architecture de pointe combinant une fenêtre d'admission LRU (~1 %), un fil
 ### 4. Cache ARC (Adaptive Replacement Cache)
 Une implémentation stricte et *Thread-Safe* de l'algorithme auto-adaptatif d'IBM. L'ARC pilote dynamiquement 4 listes internes (2 en RAM, 2 "fantômes" pour l'historique) afin de trouver l'équilibre parfait entre la **récence** (LRU) et la **fréquence** (LFU) d'accès.
 - **Vitesse d'accès :** **~58 ns** (Hit historique) à **~62 ns** (Hit en RAM).
+- **Allocation mémoire :** **0 octet** 
 - **Auto-adaptatif :** Ajuste sa stratégie d'éviction en temps réel sans aucune configuration manuelle.
-- **Allocation mémoire :** **0 octet** lors des phases d'exécution grâce au recyclage des nœuds.
+
 
 ---
 
@@ -54,7 +55,7 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 
 ---
 
-## 🛠️ Exemples Concrets pour Trancher
+## 🛠️ Exemples Concrets
 
 ### Cas 1 : Vous développez un jeu vidéo "Open World" (Choix : LRU)
 - **Le comportement :** Le joueur avance en ligne droite. Le moteur doit charger les textures de la zone devant lui et jeter celles de la zone qu'il vient de quitter définitivement.
@@ -80,7 +81,7 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 
 ## 📊 Résultats des Benchmarks (BenchmarkDotNet)
 
-Mesures scientifiques réalisées sous .NET 9 (mode *Release*, capacité variable) :
+Mesures scientifiques réalisées sous .NET 10 (mode *Release*, capacité variable) :
 
 | Algorithme / Moteur | Opération | Capacité | Temps Moyen (Mean) | Allocation Mémoire |
 | :--- | :--- | :---: | :---: | :---: |
