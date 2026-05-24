@@ -6,7 +6,7 @@ Un moteur de cache en mémoire à très haute performance. Conçue pour les appl
 
 ## 🚀 Moteurs de Cache Disponibles
 
-### 1. Cache LRU Ultime (Least Recently Used)
+### 1. Cache LRU (Least Recently Used)
 Une réécriture complète *Hardware-Friendly* basée sur un tableau contigu de structures (`struct`) et des index entiers au lieu de pointeurs d'objets traditionnels.
 - **Vitesse de lecture :** **~48 ns** (Gain de 40 % sur la localité spatiale du cache CPU).
 - **Allocation mémoire :** **0 octet** 
@@ -39,10 +39,14 @@ Le choix d'un algorithme de cache dépend entièrement du **profil d'accès à v
 
 ### 📋 Les 4 Critères Majeurs de Décision
 
-1. **La Récence (Le facteur Temps) :** Une donnée qui vient d'être consultée a-t-elle de grandes chances d'être redemandée immédiatement ? *(Ex. : fils d'actualité, paniers d'achat)* ➡️ **Priorité LRU**
-2. **La Fréquence (Le facteur Popularité) :** Existe-t-il des données "stars" qui restent très demandées sur de longues périodes, même si elles ne sont pas lues chaque seconde ? *(Ex. : taux de change, fiches produits Best-Sellers)* ➡️ **Priorité LFU**
-3. **L'Immunité aux Scans (Politiques anti-pollution) :** Votre application effectue-t-elle de temps à autre des lectures massives de tables entières qui risquent d'expulser le cache chaud légitime ? ➡️ **Priorité W-TinyLFU**
-4. **La Volatilité du Trafic :** Votre comportement d'accès change-t-il constamment de dynamique (vagues de nouveautés puis retour soudain au fond de catalogue) ? ➡️ **Priorité ARC**
+1. **La Récence (Le facteur Temps) :** Une donnée qui vient d'être consultée a-t-elle de grandes chances d'être redemandée immédiatement ? *(Ex. : fils d'actualité, paniers d'achat)* 
+- ➡️ **Priorité LRU**
+2. **La Fréquence (Le facteur Popularité) :** Existe-t-il des données "stars" qui restent très demandées sur de longues périodes, même si elles ne sont pas lues chaque seconde ? *(Ex. : taux de change, fiches produits Best-Sellers)*
+- ➡️ **Priorité LFU**
+3. **L'Immunité aux Scans (Politiques anti-pollution) :** Votre application effectue-t-elle de temps à autre des lectures massives de tables entières qui risquent d'expulser le cache chaud légitime ?
+- ➡️ **Priorité W-TinyLFU**
+4. **La Volatilité du Trafic :** Votre comportement d'accès change-t-il constamment de dynamique (vagues de nouveautés puis retour soudain au fond de catalogue) ?
+- ➡️ **Priorité ARC**
 
 ### 📊 Tableau Décisionnel Rapide
 
@@ -85,8 +89,8 @@ Mesures scientifiques réalisées sous .NET 10 (mode *Release*, capacité variab
 
 | Algorithme / Moteur | Opération | Capacité | Temps Moyen (Mean) | Allocation Mémoire |
 | :--- | :--- | :---: | :---: | :---: |
-| **Cache LRU ** | Lecture d'un élément existant | 10 000 | **48.72 ns** | **0 B** |
-| **Cache LRU ** | Insertion avec éviction | 10 000 | **66.56 ns** | **0 B** |
+| **Cache LRU** | Lecture d'un élément existant | 10 000 | **48.72 ns** | **0 B** |
+| **Cache LRU** | Insertion avec éviction | 10 000 | **66.56 ns** | **0 B** |
 | **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 100 | **11.93 ns** | **0 B** |
 | **Cache LFU $O(1)$** | Obtenir (Cache Miss) | 10 000 | **20.21 ns** | **0 B** |
 | **Cache LFU $O(1)$** | Inserer avec Éviction LFU | 100 | **56.43 ns** | **0 B** |
@@ -95,17 +99,15 @@ Mesures scientifiques réalisées sous .NET 10 (mode *Release*, capacité variab
 | **Cache LFU $O(1)$** | Inserer (Mise à jour) | 10 000 | **109.86 ns** | **0 B** |
 | **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 100 | **101.93 ns** | **0 B** |
 | **Cache LFU $O(1)$** | Obtenir (Cache Hit) | 10 000 | **120.41 ns** | **0 B** |
-
 | **Cache W-TinyLFU** | Obtenir W-TinyLFU (Cache Miss) | 100 | **14.21 ns** | **0 B** |
 | **Cache W-TinyLFU** | Obtenir W-TinyLFU (Cache Miss) | 10 000 | **14.85 ns** | **0 B** |
 | **Cache W-TinyLFU** | Inserer avec Éviction W-TinyLFU| 100 | **56.12 ns** | **0 B** |
 | **Cache W-TinyLFU** | Inserer avec Éviction W-TinyLFU| 10 000 | **56.91 ns** | **0 B** |
 | **Cache W-TinyLFU** | Obtenir W-TinyLFU (Cache Hit)  | 100 | **112.45 ns** | **0 B** |
 | **Cache W-TinyLFU** | Obtenir W-TinyLFU (Cache Hit)  | 10 000 | **131.02 ns** | **0 B** |
-
-| **Cache ARC ** | Hit dans l'historique fantôme | 10 000 | **58.57 ns** | **0 B** |
-| **Cache ARC ** | Lecture d'un élément en RAM | 10 000 | **62.92 ns** | **0 B** |
-| **Cache ARC ** | Insertion + Éviction adaptative | 10 000 | **108.22 ns** | **0 B** |
+| **Cache ARC** | Hit dans l'historique fantôme | 10 000 | **58.57 ns** | **0 B** |
+| **Cache ARC** | Lecture d'un élément en RAM | 10 000 | **62.92 ns** | **0 B** |
+| **Cache ARC** | Insertion + Éviction adaptative | 10 000 | **108.22 ns** | **0 B** |
 
 ---
 
