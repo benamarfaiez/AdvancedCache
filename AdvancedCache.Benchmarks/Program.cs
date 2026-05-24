@@ -8,7 +8,8 @@ namespace AdvancedCache.Benchmarks
         {
             BenchmarkRunner.Run<CacheARCBenchmarks>();
             BenchmarkRunner.Run<CacheLRUBenchmarks>();
-            BenchmarkRunner.Run<CacheLFUBenchmark>();            
+            BenchmarkRunner.Run<CacheLFUBenchmark>();
+            BenchmarkRunner.Run<CacheWTinyLfuBenchmarks>();
         }
     }
 }

@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang='en'>
+<head>
+<meta charset='utf-8' />
+<title>AdvancedCache.Benchmarks.CacheWTinyLfuBenchmarks-20260524-201847</title>
+
+<style type="text/css">
+	table { border-collapse: collapse; display: block; width: 100%; overflow: auto; }
+	td, th { padding: 6px 13px; border: 1px solid #ddd; text-align: right; }
+	tr { background-color: #fff; border-top: 1px solid #ccc; }
+	tr:nth-child(even) { background: #f8f8f8; }
+</style>
+</head>
+<body>
+<pre><code>
+BenchmarkDotNet v0.15.8, Windows 10 (10.0.19045.7291/22H2/2022Update)
+Intel Core i7-6500U CPU 2.50GHz (Max: 2.59GHz) (Skylake), 1 CPU, 4 logical and 2 physical cores
+.NET SDK 10.0.101
+  [Host]     : .NET 10.0.1 (10.0.1, 10.0.125.57005), X64 RyuJIT x86-64-v3
+  DefaultJob : .NET 10.0.1 (10.0.1, 10.0.125.57005), X64 RyuJIT x86-64-v3
+</code></pre>
+<pre><code></code></pre>
+
+<table>
+<thead><tr><th>Method                     </th><th>Capacite</th><th>Mean</th><th>Error</th><th>StdDev</th><th>Median</th><th>Rank</th><th>Allocated</th>
+</tr>
+</thead><tbody><tr><td>&#39;Obtenir (Cache Miss)&#39;</td><td>100</td><td>12.17 ns</td><td>0.327 ns</td><td>0.808 ns</td><td>11.84 ns</td><td>1</td><td>-</td>
+</tr><tr><td>&#39;Obtenir (Cache Miss)&#39;</td><td>10000</td><td>19.29 ns</td><td>0.270 ns</td><td>0.210 ns</td><td>19.30 ns</td><td>2</td><td>-</td>
+</tr><tr><td>&#39;Obtenir (Cache Hit)&#39;</td><td>100</td><td>49.22 ns</td><td>0.568 ns</td><td>0.504 ns</td><td>49.38 ns</td><td>3</td><td>-</td>
+</tr><tr><td>&#39;Inserer (Mise à jour)&#39;</td><td>100</td><td>51.32 ns</td><td>0.685 ns</td><td>0.572 ns</td><td>51.05 ns</td><td>4</td><td>-</td>
+</tr><tr><td>&#39;Inserer avec Éviction W-TinyLFU&#39;</td><td>100</td><td>52.81 ns</td><td>0.742 ns</td><td>0.794 ns</td><td>52.67 ns</td><td>4</td><td>-</td>
+</tr><tr><td>&#39;Inserer (Mise à jour)&#39;</td><td>10000</td><td>84.67 ns</td><td>1.709 ns</td><td>1.515 ns</td><td>84.39 ns</td><td>5</td><td>-</td>
+</tr><tr><td>&#39;Obtenir (Cache Hit)&#39;</td><td>10000</td><td>85.05 ns</td><td>0.836 ns</td><td>0.782 ns</td><td>85.21 ns</td><td>5</td><td>-</td>
+</tr><tr><td>&#39;Inserer avec Éviction W-TinyLFU&#39;</td><td>10000</td><td>85.11 ns</td><td>1.080 ns</td><td>0.958 ns</td><td>85.41 ns</td><td>5</td><td>-</td>
+</tr></tbody></table>
+</body>
+</html>
