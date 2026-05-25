@@ -7,7 +7,7 @@ public class CacheLfuTests
     public void Obtenir_CleInexistante_RetourneValeurParDefaut()
     {
         // Arrange
-        ICache<string, string> cache = new CacheLFU<string, string>(3);
+        var cache = new CacheLFU<string, string>(3);
 
         // Act
         var resultat = cache.Obtenir("cle_inconnue");
@@ -20,7 +20,7 @@ public class CacheLfuTests
     public void InsererEtObtenir_CasNominal_RetourneLaValeurInseree()
     {
         // Arrange
-        ICache<int, string> cache = new CacheLFU<int, string>(2);
+        var cache = new CacheLFU<int, string>(2);
 
         // Act
         cache.Inserer(1, "Premium");
@@ -35,7 +35,7 @@ public class CacheLfuTests
     public void Inserer_CleExistante_MetAJourLaValeurEtAugmenteLaFrequence()
     {
         // Arrange
-        ICache<int, string> cache = new CacheLFU<int, string>(2);
+        var cache = new CacheLFU<int, string>(2);
         cache.Inserer(1, "Version 1");
         cache.Inserer(2, "Autre Element");
 
