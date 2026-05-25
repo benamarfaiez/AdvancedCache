@@ -7,14 +7,14 @@ public class CacheWTinyLfuTests
     [Fact]
     public void Obtenir_CleInexistante_RetourneValeurParDefaut()
     {
-        ICache<string, int> cache = new CacheWTinyLfu<string, int>(10);
+        var cache = new CacheWTinyLfu<string, int>(10);
         Assert.Equal(0, cache.Obtenir("Inconnu")); // Gestion propre des Value Types (int -> 0)
     }
 
     [Fact]
     public void InsererEtObtenir_CasNominal_StockeLaDonnee()
     {
-        ICache<string, string> cache = new CacheWTinyLfu<string, string>(10);
+        var cache = new CacheWTinyLfu<string, string>(10);
         cache.Inserer("Cle1", "Donnee1");
         Assert.Equal("Donnee1", cache.Obtenir("Cle1"));
     }
