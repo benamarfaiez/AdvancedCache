@@ -6,7 +6,7 @@ namespace AdvancedCache.Benchmarks;
 [MemoryDiagnoser]
 public class CacheLRUBenchmarks
 {
-    private CacheLRU<string, int> _cache;
+    private CacheLRU<string, int>? _cache;
 
     // Configuration initiale avant l'exécution des tests
     [GlobalSetup]
@@ -22,10 +22,10 @@ public class CacheLRUBenchmarks
 
     // Test 1 : Vitesse de lecture (doit être proche du O(1) pur)
     [Benchmark]
-    public int Benchmark_Obtenir_Element_Existant()
+    public int? Benchmark_Obtenir_Element_Existant()
     {
         // On lit une clé du milieu, ce qui force la réorganisation de la LinkedList
-        return _cache.Obtenir("cle_500");
+        return _cache?.Obtenir("cle_500");
     }
 
     // Test 2 : Vitesse d'insertion avec éviction (politique LRU)
@@ -34,6 +34,6 @@ public class CacheLRUBenchmarks
     {
         // Le cache est plein (limite 1000), cette insertion va forcer 
         // la suppression instantanée de l'élément le plus ancien.
-        _cache.Inserer("nouvelle_cle_concurrente", 9999);
+        _cache?.Inserer("nouvelle_cle_concurrente", 9999);
     }
 }
