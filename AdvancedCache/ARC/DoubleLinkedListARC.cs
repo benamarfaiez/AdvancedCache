@@ -11,10 +11,10 @@ internal class DoubleLinkedListARC<K, V> where K : notnull
         noeud.Suivant = Tete;
         noeud.Precedent = null;
 
-        if (Tete != null) Tete.Precedent = noeud;
+        Tete?.Precedent = noeud;
         Tete = noeud;
 
-        if (Queue == null) Queue = noeud;
+        Queue ??= noeud;
         Taille++;
     }
 

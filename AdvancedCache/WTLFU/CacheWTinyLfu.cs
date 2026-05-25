@@ -3,16 +3,12 @@ namespace AdvancedCache.WTLFU;
 /// <summary>
 /// Cache en mémoire ultra-performant basé sur l'algorithme W-TinyLFU (Window TinyLFU).
 /// Offre une complexité O(1) pour toutes les opérations (Obtenir, Inserer, Éviction).
-/// Zéro allocation de listes chaînées grâce à des pointeurs internes.
 /// </summary>
 /// <remarks>
 /// W-TinyLFU divise le cache en 3 zones:
 /// - Window: Zone petite (1% de la capacité) pour les éléments récents.
 /// - Probation: Zone médiane pour les éléments testés.
 /// - Protected: Zone principale pour les éléments avec une fréquence d'accès élevée.
-/// 
-/// Lors d'une éviction, un "duel de fréquence" s'opère entre l'élément éjecté
-/// de la zone Window et le moins récemment utilisé de la zone Probation.
 /// </remarks>
 
 public class CacheWTinyLfu<K, V> : ICache<K, V> where K : notnull
@@ -21,7 +17,7 @@ public class CacheWTinyLfu<K, V> : ICache<K, V> where K : notnull
     private readonly int _limiteFenetre;
     private readonly int _limiteProtegee;
 
-    private readonly Dictionary<K, NoeudTinyLfu<K, V>> _indexGlobal = new();
+    private readonly Dictionary<K, NoeudTinyLfu<K, V>> _indexGlobal = [];
     private readonly FiltreCountMinSketch<K> _filtreFrequence;
 
     private readonly ListeDoublementChaineeCustom<K, V> _listeFenetre = new();

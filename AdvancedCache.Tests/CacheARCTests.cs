@@ -2,6 +2,7 @@
 using FluentAssertions;
 
 namespace AdvancedCache.Tests;
+
 public class CacheARCTests
 {
     [Fact]
@@ -11,31 +12,17 @@ public class CacheARCTests
         // Capacité c = 2. La taille cumulée des 4 listes ne peut jamais dépasser 2c (soit 4 éléments).
         var cache = new CacheARC<string, string>(2);
 
-        // 1. On remplit la mémoire RAM (T1)
-        cache.Inserer("A", "vA"); // T1: [A]
-        cache.Inserer("B", "vB"); // T1: [B, A]
-
-        // 2. On provoque des évictions vers B1 (Historique Récence)
-        cache.Inserer("C", "vC"); // T1 pousse A hors de la RAM -> T1: [C, B], B1: [A (fantôme)]
-        cache.Inserer("D", "vD"); // T1 pousse B hors de la RAM -> T1: [D, C], B1: [B, A (fantômes)]
-
-        // À ce stade : T1 compte 2 éléments (D, C) et B1 compte 2 éléments (B, A). Total = 4 (2c).
-        // Le cache et son historique sont pleins à craquer.
-
-        // Act
-        // L'insertion d'un 5e élément ("E") déclenche le cas limite : 
-        // l1Taille (T1 + B1) == c (2 + 2 = 4, ce qui vaut 2c en limite globale).
-        // L'ARC doit supprimer définitivement le plus ancien fantôme de B1 (qui est "A") pour faire de la place.
+        cache.Inserer("A", "vA");
+        cache.Inserer("B", "vB");
+        cache.Inserer("C", "vC");
+        cache.Inserer("D", "vD");
         cache.Inserer("E", "vE");
 
-        // Assert
-        cache.Obtenir("E").Should().Be("vE"); // Nouveau venu bien présent en RAM (T1)
-        cache.Obtenir("B").Should().BeNull(); // 'B' est toujours un fantôme dans B1 (valeur null mais clé connue)
+        cache.Obtenir("E").Should().Be("vE");
+        cache.Obtenir("B").Should().BeNull();
 
-        // C'est le test crucial : 'A' a été complètement radié du dictionnaire pour éviter la fuite de mémoire.
-        // Un Obtenir sur une clé radiée doit renvoyer la valeur par défaut du type.
-        var actionObtenirA = () => cache.Obtenir("A");
-        actionObtenirA().Should().BeNull();
+        var valueA = cache.Obtenir("A");
+        valueA.Should().BeNull();
     }
 
     [Fact]

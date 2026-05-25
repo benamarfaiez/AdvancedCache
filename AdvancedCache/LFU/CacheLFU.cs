@@ -5,10 +5,10 @@ public class CacheLFU<K, V> : ICache<K, V> where K : notnull
     private readonly int _capacite;
 
     // Accès direct au nœud via sa clé
-    private readonly Dictionary<K, NoeudLFU<K, V>> _nodeMap = new();
+    private readonly Dictionary<K, NoeudLFU<K, V>> _nodeMap = [];
 
     // Regroupement des nœuds par fréquence
-    private readonly Dictionary<int, DoubleLinkedListLFU<K, V>> _freqMap = new();
+    private readonly Dictionary<int, DoubleLinkedListLFU<K, V>> _freqMap = [];
 
     private int _minFrequence = 0;
 

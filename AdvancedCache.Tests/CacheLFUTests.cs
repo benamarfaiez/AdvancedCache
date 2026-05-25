@@ -1,6 +1,7 @@
 ﻿using AdvancedCache.LFU;
 
 namespace AdvancedCache.Tests;
+
 public class CacheLfuTests
 {
     [Fact]

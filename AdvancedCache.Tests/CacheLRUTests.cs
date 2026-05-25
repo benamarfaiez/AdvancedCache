@@ -1,6 +1,7 @@
 ﻿using AdvancedCache.LRU;
 
 namespace AdvancedCache.Tests;
+
 public class CacheLRUTests
 {
     [Fact]

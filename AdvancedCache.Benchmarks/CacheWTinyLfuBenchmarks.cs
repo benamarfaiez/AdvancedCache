@@ -10,7 +10,7 @@ namespace AdvancedCache.Benchmarks;
 /// Teste également la scalabilité avec différentes capacités (100 et 10 000).
 /// </summary>
 [MemoryDiagnoser]
-[Orderer(SummaryOrderPolicy.FastestToSlowest)] 
+[Orderer(SummaryOrderPolicy.FastestToSlowest)]
 [RankColumn]
 public class CacheWTinyLfuBenchmarks
 {
@@ -28,8 +28,8 @@ public class CacheWTinyLfuBenchmarks
     {
         _aleatoire = new Random(42); // Graine fixe pour la reproductibilité
         _cache = new CacheWTinyLfu<int, string>(Capacite);
-        _clesExistantes = new List<int>();
-        _clesInexistantes = new List<int>();
+        _clesExistantes = [];
+        _clesInexistantes = [];
 
         // 1. Remplir le cache au maximum de sa capacité
         for (int i = 0; i < Capacite; i++)

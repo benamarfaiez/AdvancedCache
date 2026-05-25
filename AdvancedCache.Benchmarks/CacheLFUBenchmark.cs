@@ -23,8 +23,8 @@ public class CacheLFUBenchmark
     {
         _random = new Random(42); // Graine fixe pour la reproductibilité
         _cache = new CacheLFU<int, string>(Capacite);
-        _clesExistantes = new List<int>();
-        _clesInexistantes = new List<int>();
+        _clesExistantes = [];
+        _clesInexistantes = [];
 
         // 1. Remplir le cache au max de sa capacité
         for (int i = 0; i < Capacite; i++)

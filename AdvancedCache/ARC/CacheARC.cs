@@ -1,13 +1,14 @@
 ﻿using System.Runtime.CompilerServices;
 
 namespace AdvancedCache.ARC;
+
 public sealed class CacheARC<K, V> : ICache<K, V> where K : notnull
 {
     private readonly int _c; // Capacité cible du cache (RAM)
     private double _p;       // Paramètre d'adaptation dynamique (Taille cible de T1)
 
     private readonly Dictionary<K, NoeudARC<K, V>> _dictionnaire;
-    private readonly object _lock = new();
+    private readonly Lock _lock = new();
 
     // Composants spécialisés et isolés (SRP)
     private readonly DoubleLinkedListARC<K, V> _t1 = new();
