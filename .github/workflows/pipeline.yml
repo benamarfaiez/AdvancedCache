@@ -1,0 +1,99 @@
+name: Pipeline CI/CD AdvancedCache
+
+on:
+  push:
+    branches: [ main, master ]
+    tags:
+      - 'v*' # Déclenche le pipeline sur les tags de version (ex: v1.0.0)
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  # ==========================================
+  # 1. JOB : COMPILATION (BUILD)
+  # ==========================================
+  build:
+    name: Compilation du Projet
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.0'
+
+      - name: Restauration des dépendances
+        run: dotnet restore
+
+      - name: Compilation de la solution
+        run: dotnet build --configuration Release --no-restore
+
+  # ==========================================
+  # 2. JOB : TESTS UNITAIRES (XUNIT)
+  # ==========================================
+  test:
+    name: Tests Unitaires
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.0'
+
+      - name: Exécution des tests xUnit
+        run: dotnet test --configuration Release --logger "trx;LogFileName=resultats-tests.trx" --collect:"XPlat Code Coverage"
+
+      - name: Sauvegarde des rapports de tests
+        uses: actions/upload-artifact@v4
+        with:
+          name: rapports-tests
+          path: "**/TestResults/*.trx"
+        if: always() # Sauvegarde le rapport même si un test échoue
+
+  # ==========================================
+  # 3. JOB : QUALITÉ DE CODE (ANALYSE STATIQUE)
+  # ==========================================
+  quality:
+    name: Analyse de Qualité
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.0'
+
+      - name: Vérification du format du code (dotnet format)
+        run: dotnet format --verify-no-changes --severity info
+
+  # ==========================================
+  # 4. JOB : DÉPLOIEMENT (PUBLICATION NUGET)
+  # ==========================================
+  deploy:
+    name: Publication NuGet
+    needs: quality
+    if: startsWith(github.ref, 'refs/tags/v') # Sécurité : s'exécute uniquement sur un tag de version
+    runs-on: ubuntu-latest
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de .NET 10
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.0'
+
+      - name: Création du paquet NuGet (.nupkg)
+        run: dotnet pack --configuration Release --output ./paquets
+
+      - name: Push sur NuGet.org
+        run: dotnet nuget push "./paquets/*.nupkg" --api-key ${{ secrets.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
